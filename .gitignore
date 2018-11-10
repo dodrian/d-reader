@@ -1,0 +1,8 @@
+# ignore the following files
+project.sh
+**/.remote-sync.json
+**/*.pyc
+**/__pycache__/
+**/migrations
+old/
+djapi/djapi/secrets.py

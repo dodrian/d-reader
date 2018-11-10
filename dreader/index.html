@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+
+ An example RSS reader written in Vue.js
+ Copyright Dorian Westacott, 2018
+ CSS using bootstrap
+ Open source icons thanks to Material Design, https://material.io/tools/icons
+
+-->
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Hello, View</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://raw.github.com/leizongmin/js-xss/master/dist/xss.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/css/bootstrap.min.css" integrity="sha384-Smlep5jCw/wG7hdkwQ/Z5nLIefveQRIY9nfy6xoR1uRYBtpZgI6339F5dgvm/e9B" crossorigin="anonymous">
+    <link rel="Stylesheet" type="text/css" href="dreader.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.2/js/bootstrap.min.js" integrity="sha384-o+RDsa0aLu++PJvFqy8fFScvbHFLtbvScb8AjopnFD+iEQ7wo/CG0xlczd+2O/em" crossorigin="anonymous"></script>
+  </head>
+
+
+  <body>
+
+    <script type="text/javascript">
+      // Needed for django CSRF token
+      function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+      }
+      var csrftoken = getCookie('csrftoken');
+
+
+      // I am using my own store to better learn how vue.js works
+      // a future version should use vuex
+      const store = {
+        state: {
+          feeds: [],
+          activeIndex: 0,
+          loading: true,
+          username: "default",
+          loggedIn: false,
+        },
+        readPost(post){
+          post.read=true;
+          fetch('../djapi/dreader/post/' + post.id + '/read')
+            .then(response => response.json())
+            .catch(error => console.error('Error: ', error))
+        },
+        addFeed(feed, link){
+          fetch('../djapi/dreader/feed/' + feed.id + '/addSource/', {
+              method: "POST",
+              credentials: 'include',
+              body: JSON.stringify({'link': link}),
+            })
+            .then(response => response.json())
+            // NEED to merge data
+            .then(data => alert(data))
+            .catch(error => console.error('Error: ', error))
+        },
+        deleteFeed(id){
+
+        },
+        showLogin(){
+          this.state.loggedIn = true
+        },
+        logout(){
+          this.state.loggedIn = false
+        }
+      }
+
+      //load initial data from backend
+      fetch('../djapi/dreader/default/', {credentials: 'include',})
+        .then(response => response.json())
+        .then(data => {
+          //sorted_data = data.map(f => f.posts.sort((a, b) => a < b ? -1 : 1))
+          store.state.feeds = data;
+          store.state.loading = false;
+          console.log('storage: ' + JSON.stringify(data))
+        })
+
+    </script>
+
+
+
+
+      <div id="reader" >
+        <dod-header></dod-header>
+          <div class="container-fluid" style="padding-top: 60px">
+          <div v-if="store.state.loading" class="loader"></div>
+          <template v-else>
+            <feed-manager>
+          </template>
+
+        </div> <!-- container-fluid-->
+      </div> <!-- reader -->
+
+    <script type="text/javascript">
+    Vue.component('dod-header', {
+      template: `
+        <div class="navbar navbar-expand-sm fixed-top navbar-light bg-light">
+          <a href="#" class="navbar-brand mr-auto">d-Reader</a>
+          <!-- Responsive RSS Reader -->
+          <ul class="navbar-nav mr-auto">
+          <li v-if="state.loggedIn" class="navbar-dropdown dropdown">
+            <span class="dropdown-toggle navbar-text" data-toggle="dropdown">{{ state.username }}</span>
+            <div class="dropdown-menu">
+              <a class="dropdown-item"
+                @click="logout">Logout</a>
+            </div>
+          </li>
+          <button v-else class="btn btn-outline-info"
+            @click="showLogin">
+              Login
+          </button>
+          </ul>
+
+        </div>
+      `,
+      data() { return {
+        state: store.state,
+      }},
+      methods: {
+        showLogin: store.showLogin,
+        logout: store.logout,
+      },
+    })
+
+
+
+    Vue.component('feed-manager', {
+      template: `
+      <div class="row">
+        <feed :feed="store.state.feeds[store.state.activeIndex]" class="col-sm-8"></feed>
+        <div class="dsidebar col-sm-4">
+          <h4>Feeds</h4>
+          <ul class="list-group">
+            <li v-for="feed, index in store.state.feeds"
+                @click="store.state.activeIndex = index"
+                :class="{'list-group-item':true, 'active':index == store.state.activeIndex }"
+                >
+              {{ feed.name }}</li>
+          </ul>
+        </div>
+      </div>
+      `,
+      data() { return { store: store}},
+    })
+
+    Vue.component('feed-info', {
+      props: ['feed'],
+      data() {return { store: store, rlink: '' }},
+      template: `
+        <div class="card bg-info" id="feedInfo">
+          <h5 class="card-header text-white" id="feedHeading" @click="toggleCollapse" aria-expanded="true" aria-controls="collapse">
+            <i id="feedCollapseIcon" class="material-icons dfeedRotator">chevron_right</i> {{ feed.name }}
+          </h5>
+          <div class="card-body collapse" id="feedCollapse" aria-labelledby="feedHeading" data-parent="#feedInfo">
+            <ul class="list-group">
+              <li class="list-group-item"
+                  v-for="fs in feed.sources">
+                  {{ fs.title }}<span class="d-inline-block text-secondary text-truncate">—<a :href="fs.url">{{fs.url}}</a></span>
+                  <button @click="deleteFeed(fs.id)" type="button" class="btn btn-danger float-right"><i class="material-icons">close</i></button>
+              </li>
+            </ul>
+            <input type="text"
+                  class="form-control"
+                  v-model="rlink"
+                  @keyup.enter="addFeed(feed, rlink)"
+                  placeholder="Add a feed..." >
+          </div>
+        </div>
+      `,
+      methods: {
+        addFeed: store.addFeed,
+        deleteFeed: store.deleteFeed,
+        toggleCollapse: function() {
+          $('#feedCollapse').collapse('toggle')
+          $('#feedCollapseIcon').toggleClass('dfeedRotate')
+        },
+      }
+    })
+
+    Vue.component('feed', {
+      //props: ['posts', 'rlink', 'id'],
+      props: ['feed'],
+      template: `
+      <div class="dfeed">
+        <feed-info :feed="feed"></feed-info>
+        <div>
+        <post
+          v-for="post in sorted_posts"
+          v-bind:key="post.id"
+          v-bind:post="post"
+          v-if="!post.read"
+          v-on:done="remove($event)"
+          ></post>
+        </div>
+      </div>`
+      ,
+      computed: {
+        sorted_posts: function(){
+          return this.feed.posts.sort((a, b) => a.date > b.date ? -1 : 1) // newest date first
+        },
+      },
+
+    })
+
+    Vue.component('post',{
+      props: ['post'],
+      template: `
+      <div class="dpost card card-default">
+        <div class="card-body">
+          <div>
+          <h5 class="card-title"><a :href="post.link">{{post.title}}</a></h5>
+          <h6 class="card-subtitle">{{domain}}—{{formated_date}}</h6>
+          </div>
+        <div class="button-group float-right" >
+          <button type="button" class="btn btn-warning"><i class="material-icons">schedule</i></button>
+          <button v-on:click="read(post)" type="button" class="btn btn-success"><i class="material-icons">done_outline</i></button>
+        </div>
+          <!-- THIS IS UNSAFENESS -->
+          <p class="card-text"><span v-html="post.description"></span>
+          </p>
+        </div>
+      </div>
+      `,
+      computed: {
+        formated_date: function(){
+          d = new Date(this.post.date)
+          return (d.toLocaleString())
+        },
+        domain: function(){
+          return this.post.link.split('/')[2]
+        },
+        safe_description: function(){
+          return "This is a safe string."
+        },
+      },
+      methods: {
+        read: store.readPost,
+      },
+
+    })
+
+    new Vue({
+      el: '#reader',
+      data() { return { store: store}},
+    })
+
+  </script>
+  </body>
+
+</html>

@@ -1,0 +1,65 @@
+* {
+  box-sizing: border-box;
+}
+
+.dheader {
+  background:rgba(255,0,0,0.1);
+}
+
+.dsidebar {
+  background: rgba(0,0,255,0.1);
+  height: 100%;
+  padding: 15px;
+  /*
+  width: 160px;
+  height:100%;
+  display:block;
+  position: absolute;
+  overflow-y: hidden;
+*/
+}
+
+
+.dfeed {
+  background: rgba(0,255,0,0.1);
+  height:100%;
+  /*
+   margin-left: 160px;
+   display: block;
+   height:100%;
+  */
+}
+
+.dfeedRotator {
+  transition: all 0.4s ease;
+}
+
+.dfeedRotate {
+  transform: rotateZ(90deg);
+}
+
+.dpost h1 {
+  font-size: 14pt;
+  font-weight: bold;
+}
+
+@ media screen and (min-width: 767px) {
+  .sidenav {
+    height: 100%;
+  }
+}
+
+
+.loader {
+    border: 16px solid #f3f3f3; /* Light grey */
+    border-top: 16px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
