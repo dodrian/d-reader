@@ -55,34 +55,37 @@ class FeedSource(models.Model):
     def getPosts(self):
         rss = feedparser.parse(self.link)
         posts_toread = []
-        source = {'id': self.id, 'title': rss.feed.title, 'url': self.link }
-        if self.title != rss.feed.title or self.description != rss.feed.description:
-            self.title = rss.feed.title
-            self.description = rss.feed.description
-            self.save()
-        guids = [e.guid for e in rss.entries]
-        posts = self.post_set.filter(guid__in=guids)
-        for entry in rss.entries:
-            post = next(iter([post for post in posts if post.guid == entry.guid]), None)
-            if post is None:
-                post = self.post_set.create(
-                    link=entry.link,
-                    title=entry.title,
-                    description=entry.description,
-                    guid=entry.guid,
-                    read=False,
-                    date=datetime(*getattr(entry, 'published_parsed', localtime())[0:6]),
-                )
-            else:
-                if not all([getattr(post, x) == getattr(entry, x) for x in ['link','title','description','guid'] ]):
-                    post.link = entry.link
-                    post.title = entry.title
-                    post.description = entry.description
-                    if(hasattr(entry, 'published_parsed')):
-                        post.date = datetime(*entry.published_parsed[0:6])
-                    post.save()
-            if not post.read:
-                posts_toread.append(post.json())
+        try:
+            source = {'id': self.id, 'title': rss.feed.title, 'url': self.link }
+            if self.title != rss.feed.title or self.description != rss.feed.description:
+                self.title = rss.feed.title
+                self.description = rss.feed.description
+                self.save()
+            guids = [e.guid for e in rss.entries]
+            posts = self.post_set.filter(guid__in=guids)
+            for entry in rss.entries:
+                post = next(iter([post for post in posts if post.guid == entry.guid]), None)
+                if post is None:
+                    post = self.post_set.create(
+                        link=entry.link,
+                        title=entry.title,
+                        description=entry.description,
+                        guid=entry.guid,
+                        read=False,
+                        date=datetime(*getattr(entry, 'published_parsed', localtime())[0:6]),
+                    )
+                else:
+                    if not all([getattr(post, x) == getattr(entry, x) for x in ['link','title','description','guid'] ]):
+                        post.link = entry.link
+                        post.title = entry.title
+                        post.description = entry.description
+                        if(hasattr(entry, 'published_parsed')):
+                            post.date = datetime(*entry.published_parsed[0:6])
+                        post.save()
+                if not post.read:
+                    posts_toread.append(post.json())
+        except: # Error loading feed
+            return {'id': self.id, 'url': self.link}, []
         return source, posts_toread
 
     def getUnreadPosts(self):
