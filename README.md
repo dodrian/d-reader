@@ -1,7 +1,7 @@
 # d-reader
 Responsive Vue.js RSS reader with Django backend
 
-Front end in the `dreader` directory, backend in the `djapi` directory.
+Front end in the `dreader` directory, backend in the `djapi` directory. Live demo at [dodrian.com/dreader](https://dodrian.com/dreader)
 
 Much work still to be done:
 1) Add login/user creation functionality
